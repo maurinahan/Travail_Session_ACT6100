@@ -1,0 +1,174 @@
+---
+title: "Travail_Session_1_ACT6100"
+author: "Maurin AHANHANZO & Gamaliel FATAL"
+date: "07/10/2021"
+output: pdf_document
+---
+
+```{r}
+#### Importation des libraries
+library("dplyr")
+library("tidyverse")
+library("FactoMineR")
+library("factoextra")
+library("ggplot2")
+library("corrplot")
+```
+
+```{r}
+### Apercu de la base de données
+df <- read.csv("C:/Users/mauac/Desktop/ACT6100/Country-data.csv")
+head(df)
+```
+```{r}
+### dimension de la base de données:
+dim(df)
+```
+
+```{r}
+### 
+colnames(df)
+```
+
+Explication des colonnes:
+
+- Country: 
+- Child_mort: Décès d'enfants de moins de 5 ans pour 1000 naissances
+
+- Exports : Exportations de biens et services par habitant (en pourcentage du PIB par habitant).
+
+- Health: Dépenses totales de santé par habitant  (en pourcentage du PIB par habitant).
+
+- Imports: Importations de biens et services par habitant (en pourcentage du PIB par habitant).
+
+- Income: Revenu net par personne.
+
+- Inflation: La mesure du taux de croissance annuel du PIB total.
+
+- Life expec : Espérance de vie à la naissance.
+
+- Total_fer: le nombre d'enfants par femme en âge de procréation.
+
+- GDP: PIB par habitant.
+
+```{r}
+str(df)
+```
+
+```{r}
+#### Vérification si df à des valeurs manquantes:
+apply(df, 2, function(x) sum(is.na(x)))
+```
+```{r}
+ggplot(df,aes(x=log(gdpp), y=inflation))+geom_point()+geom_smooth(method=lm)
+
+```
+```{r}
+ggplot(df,aes(x=log(gdpp), y=imports))+geom_point()+geom_smooth(method=lm)
+
+```
+```{r}
+ggplot(df,aes(x=log(gdpp), y=health))+geom_point()+geom_smooth(method=lm)
+```
+
+```{r}
+ggplot(df,aes(x=log(gdpp), y=log(income)))+geom_point()+geom_smooth(method=lm)
+```
+
+```{r}
+ggplot(df,aes(x=log(gdpp), y=total_fer))+geom_point()+geom_smooth(method=lm)
+```
+
+```{r}
+ggplot(df,aes(x=log(gdpp), y=life_expec))+geom_point()+geom_smooth(method=lm)
+
+```
+```{r}
+ggplot(df,aes(x=child_mort, y=life_expec))+geom_point()+geom_smooth(method=lm)
+
+```
+```{r}
+df["balance_com"] = df["exports"]-df["imports"]
+ggplot(df,aes(x=log(gdpp), y=balance_com))+geom_point()+geom_smooth(method=lm)
+
+```
+
+
+```{r}
+R = cor(df[,-1])
+corrplot(R,type="upper")
+```
+
+```{r}
+df_norm <-
+df[,-1] %>%
+mutate_all(scale)
+# rownames(df_norm)<-df[,1]
+head(df_norm)
+```
+
+
+```{r}
+acp<-PCA(df_norm)
+print(fviz_pca_ind(acp)) 
+```
+```{r}
+acp$var$coord
+```
+```{r}
+ fviz_contrib(acp, "var", axes = c(1,2))
+```
+
+```{r}
+fviz_pca_biplot(acp, pointsize = "cos2", col.var = "cos2")
+
+```
+
+```{r}
+acp$var$coord
+```
+
+```{r}
+acp[["eig"]][ , 1]
+fviz_eig(acp)
+
+```
+
+```{r}
+fviz_pca_ind(acp, col.ind = "contrib")
+```
+
+```{r}
+hc <- HCPC(df_norm, nb.clust = 2)
+
+```
+```{r}
+fviz_dend(hc)
+fviz_cluster(hc, ggtheme = theme_bw())
+```
+
+```{r}
+cor(acp$ind$coord[,"Dim.2"],df["exports"]-df["imports"])
+```
+```{r}
+cbind(df["imports"], df["exports"],balance_com = df["exports"]-df["imports"])
+```
+```{r}
+df_1<-as.data.frame(acp$ind$coord[,1:2])
+df_1["balance_com"]<-df$balance_com
+ggplot(df_1,aes(x=Dim.1, y=Dim.2, col=balance_com))+geom_point()+geom_smooth(method=lm)
+```
+```{r}
+dat<-hc$data.clust
+dat %>% 
+  group_by(clust) %>% 
+  summarise(moy_gdpp = mean(gdpp))
+```
+
+```{r}
+df[dat["clust"]==1,1]
+dat[df$country=="Benin","gdpp"]
+# df[58,]
+```
+
+
