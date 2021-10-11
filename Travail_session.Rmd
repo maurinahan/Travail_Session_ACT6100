@@ -1,20 +1,29 @@
 ---
 title: "Travail_Session_1_ACT6100"
 author: "Maurin AHANHANZO & Gamaliel FATAL"
-date: "07/10/2021"
+date: "`r format(Sys.time(), '%d %B %Y')`"
 output: pdf_document
 ---
 EDA steps :
+
 -	Déterminer la problématique sur le jeu de données
 * Maurin:
 Qu'es ce qui différencie un pays riche d'un pays en voie de développement selon notre base de données ?
+
 -	Outils de visualisation :
+
 •	Histogramme
+
 •	Corrélogrammes
+
 •	ANOVA (variables)
+
 •	Nuages de points
+
 •	ACP
+
 •	Clustering: K-means, Hierachical clustering (liens minimum, maximum, Ward)
+
 
 ```{r}
 #### Importation des libraries
@@ -24,7 +33,6 @@ library("FactoMineR")
 library("factoextra")
 library("ggplot2")
 library("corrplot")
-library("GGally")  
 ```
 
 ```{r}
@@ -32,6 +40,7 @@ library("GGally")
 df <- read.csv("C:/Users/mauac/Desktop/ACT6100/Country-data.csv")
 head(df)
 ```
+
 ```{r}
 ### dimension de la base de données:
 dim(df)
@@ -80,21 +89,25 @@ df %>%
 Comme conclusion de cette analyse, on peut dire:
 - Nos variables numériques ne sont pas tous sur la même échelle de valeur. On a gdpp et income qui ont de grandes valeurs comparées aux autres variables.
 
+```{r}
+df_num<-df %>% 
+  select_if(is.numeric)
+R = cor(df_num)
+corrplot(R,type="lower")
+```
+
 
 ```{r}
 #### Matrice de corrélation.
 ### Affichons la matrice de correlation pour les variables dont la valeur 
 ### absolue de la corrélation est supérieure à 0.5
 
-df_num<-df %>% 
-  select_if(is.numeric)
-R = cor(df_num)
 #prepare to drop duplicates and correlations of 1     
 R[lower.tri(R,diag=TRUE)] <- NA 
 #drop perfect correlations
 R[R == 1] <- NA 
 
-sig = 0.5
+sig = 0.6
 #turn into a 3-column table
 corr <- as.data.frame(as.table(R))
 #remove the NA values from above 
@@ -112,7 +125,7 @@ mtx_corr <- acast(corr, Var1~Var2, value.var="Freq")
 corrplot(mtx_corr, is.corr=FALSE, tl.col="black", na.label=" ")
 ```
 
-On en ressort dix couples de variables dont la corrélation en valeur absolue entre elles sont supérieures à 0.5. Visualisons les:
+On en ressort sept couples de variables dont la corrélation en valeur absolue entre elles sont supérieures à 0.6. Visualisons les:
 
 ```{r}
 ggplot(df,aes(x=log(income), y=log(gdpp)))+geom_point()+geom_smooth(method = "lm")
@@ -137,6 +150,12 @@ ggplot(df,aes(x=child_mort, y=total_fer))+geom_point()+geom_smooth(method=lm)
 On voit que child_mort et total_fer sont fortement correlés positivement. On peut conclure qu'au vu de ce graphique qu'un pays avec un taux de mortalité infantile élevé à tendance à avoir un taux de fécondité élevé moyen par femme et vice-versa.
 
 ```{r}
+ggplot(df,aes(x=life_expec, y=total_fer))+geom_point()+geom_smooth(method=lm)
+
+```
+On voit que life_expec et total_fer sont fortement correlés négativement. On peut conclure au vu de ce graphique qu'un pays avec une espérance de vie moyenne par personne élevée à tendance à avoir un taux de fécondité par femme par personne faible.
+
+```{r}
 ggplot(df,aes(x=exports, y=imports))+geom_point()+geom_smooth(method=lm)
 
 ```
@@ -153,23 +172,6 @@ ggplot(df,aes(x=life_expec, y=log(gdpp)))+geom_point()+geom_smooth(method=lm)
 ```
 On voit que gdpp et life_exp sont corrélés positivement. On peut conclure qu'au vu de ce graphique qu'un pays avec une espérance de vie moyenne élevée à tendance à avoir un PIB élevé. Ceci est pertinent puisque income et gdpp sont fortement correlés entre eux et income est correlés avec life_expec.
 
-```{r}
-ggplot(df,aes(x=child_mort, y=log(income)))+geom_point()+geom_smooth(method=lm)
-```
-On voit que child_mort et gdpp sont fortement corrélés négativement. On peut conclure qu'au vu de ce graphique qu'un pays avec un taux de mortalité infantile élevé à tendance à avoir un PIB faible.
-
-
-```{r}
-ggplot(df,aes(x=exports, y=log(income)))+geom_point()+geom_smooth(method=lm)
-
-```
-On voit que exports et income sont corrélés positivement. On peut conclure qu'au vu de ce graphique qu'un pays qui exporte beaucoup à tendance à avoir avoir un revenu net par personne élevé.Mais c'est pas toujours le cas, on constate sur le graphique qu'il ya des pays avec un revenu net moyen par personne élevé qui n'exportent pas beaucoup.
-
-```{r}
-ggplot(df,aes(x=log(income), y=total_fer))+geom_point()+geom_smooth(method = "loess")
-
-```
-On voit que income et total_fer sont corrélés négativement. On peut conclure qu'au vu de ce graphique qu'un pays avec un revenu net moyen par personne élevé à tendance à avoir un taux de fécondité moyen faible mais c'est pas toujours le cas, on constate sur le graphiqu'il ya des pays avec un revenu net moyen par personne élevé qui ont un taux de fécondité élevé également.
 
 
 ```{r}
@@ -217,36 +219,18 @@ fviz_pca_ind(acp, col.ind = "contrib")
 ```
 
 ```{r}
-hc <- HCPC(df_norm, nb.clust = 2)
+hc <- HCPC(df_norm, nb.clust = 2,graph = FALSE)
 
 ```
 ```{r}
 fviz_dend(hc)
 fviz_cluster(hc, ggtheme = theme_bw())
 ```
-
 ```{r}
-cor(acp$ind$coord[,"Dim.2"],df["exports"]-df["imports"])
-```
-```{r}
-cbind(df["imports"], df["exports"],balance_com = df["exports"]-df["imports"])
-```
-```{r}
-df_1<-as.data.frame(acp$ind$coord[,1:2])
-df_1["balance_com"]<-df$balance_com
-ggplot(df_1,aes(x=Dim.1, y=Dim.2, col=balance_com))+geom_point()+geom_smooth(method=lm)
-```
-```{r}
-dat<-hc$data.clust
-dat %>% 
-  group_by(clust) %>% 
-  summarise(moy_gdpp = mean(gdpp))
+df_num$clust<-hc$data.clust$clust
+# ggplot(df_num,aes(x=log(income), y=log(gdpp),col=clust))+geom_point()+geom_smooth(method = "lm")
+ggplot(df_num,aes(x=clust,fill=clust))+geom_bar()
 ```
 
-```{r}
-df[dat["clust"]==1,1]
-dat[df$country=="Benin","gdpp"]
-# df[58,]
-```
 
 
