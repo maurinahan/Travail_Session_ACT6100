@@ -4,29 +4,15 @@ author: "Maurin AHANHANZO & Gamaliel FATAL"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output: pdf_document
 ---
-EDA steps :
-
--	Déterminer la problématique sur le jeu de données
-* Maurin:
-Qu'es ce qui différencie un pays riche d'un pays en voie de développement selon notre base de données ?
-
--	Outils de visualisation :
-
-•	Histogramme
-
-•	Corrélogrammes
-
-•	ANOVA (variables)
-
-•	Nuages de points
-
-•	ACP
-
-•	Clustering: K-means, Hierachical clustering (liens minimum, maximum, Ward)
 
 
-```{r}
-#### Importation des libraries
+#### Importation des libraries:
+
+```{r echo=TRUE, warning=FALSE}
+#install.packages("choroplethrMaps") # installer le package si vous l'avez pas
+#install.packages("choroplethr") # installer le package si vous l'avez pas
+library("choroplethr")
+library("ggmap")
 library("dplyr")
 library("tidyverse")
 library("FactoMineR")
@@ -34,6 +20,11 @@ library("factoextra")
 library("ggplot2")
 library("corrplot")
 ```
+
+### Mise en Activité
+
+#### Exploration de la Base de données:
+
 
 ```{r}
 ### Apercu de la base de données
@@ -50,7 +41,8 @@ dim(df)
 ### 
 colnames(df)
 ```
-Explication des colonnes:
+
+Explication des colonnes de la base de données:
 
 - Country: 
 - Child_mort: Décès d'enfants de moins de 5 ans pour 1000 naissances
@@ -70,6 +62,7 @@ Explication des colonnes:
 - Total_fer: le nombre d'enfants moyen par femme en âge de procréation.
 
 - GDP: PIB par habitant.
+
 ```{r}
 #### Vérification si df à des valeurs manquantes:
 apply(df, 2, function(x) sum(is.na(x)))
@@ -81,26 +74,248 @@ str(df)
 ```
 
 ```{r}
-## Statistiques descriptives des variables numeriques:
-df %>% 
-  select_if(is.numeric) %>% 
-  summary()
-```
-Comme conclusion de cette analyse, on peut dire:
-- Nos variables numériques ne sont pas tous sur la même échelle de valeur. On a gdpp et income qui ont de grandes valeurs comparées aux autres variables.
-
-```{r}
+## Statistiques descriptives :
 df_num<-df %>% 
   select_if(is.numeric)
+df_num  %>% 
+  summary()
+```
+On constate que nos variables numériques ne sont pas toutes sur la même échelle de valeur. On a gdpp et income qui ont de grandes valeurs comparées aux autres variables.
+
+
+#### Visualisation:
+
+##### Histogramme de Child_mort:
+
+```{r}
+ggplot(df_num, aes(x = child_mort, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramme de child_mort (mortalité infantile)", 
+       subtitle = "number of bins = 20")
+```
+
+##### Histogramme de exports:
+
+```{r}
+ggplot(df_num, aes(x = exports, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramme de exports (exportations)", 
+       subtitle = "number of bins = 20")
+```
+
+##### Histogramme de health:
+
+```{r}
+ggplot(df_num, aes(x = health, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramme de health (Dépense de santé par habitant)", 
+       subtitle = "number of bins = 20")
+```
+
+##### Histogramme de imports:
+```{r}
+
+ggplot(df_num, aes(x = imports, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramme de imports (importations)", 
+       subtitle = "number of bins = 20")
+```
+
+##### Histogramme de gdpp:
+
+```{r}
+ggplot(df_num, aes(x = gdpp, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramme de gdpp (PIB)", 
+       subtitle = "number of bins = 20")
+
+```
+
+##### Histogramme de total_fer:
+
+```{r}
+ggplot(df_num, aes(x = total_fer, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramme de total_fer", 
+       subtitle = "number of bins = 20")
+
+```
+
+##### Histogramme de income:
+```{r}
+ggplot(df_num, aes(x = income, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramm de income", 
+       subtitle = "number of bins = 20")
+
+```
+
+##### Histogramme de inflation:
+```{r}
+ggplot(df_num, aes(x = inflation, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramm de inflation", 
+       subtitle = "number of bins = 20")
+```
+##### Histogramme de life_expec:
+```{r}
+
+ggplot(df_num, aes(x = life_expec, fill="cornflowerblue")) +
+  geom_histogram()+ labs(title="Histogramme de life_expec", 
+       subtitle = "number of bins = 20")
+```
+
+#### Visualisation GeoMap:
+
+##### Country vs life_expec:
+
+```{r}
+plotdata <- df %>%
+  rename(region = country,
+         value = life_expec) %>%
+  mutate(region = tolower(region)) %>% mutate(region = recode(region,
+                          "united states"    = "united states of america",
+                          "congo, dem. rep." = "democratic republic of the congo",
+                          "congo, rep."      = "republic of congo",
+                          "korea, dem. rep." = "south korea",
+                          "korea. rep."      = "north korea",
+                          "tanzania"         = "united republic of tanzania",
+                          "serbia"           = "republic of serbia",
+                          "slovak republic"  = "slovakia",
+                          "yemen, rep."      = "yemen",
+                          "cote d'ivoire"    = "ivory coast",
+                          "guinea-bissau"    = "guinea bissau"
+                          ))
+country_choropleth(plotdata,num_colors=9)+
+   scale_fill_brewer(palette="YlOrRd") +
+  labs(title = "life_exp par country",
+       fill = "life_expec")
+
+# Source: https://rkabacoff.github.io/datavis/GeoMaps.html#dot-density-maps
+#Inspiré de ce site
+```
+
+##### Country vs income:
+
+```{r}
+plotdata <- df %>%
+  rename(region = country,
+         value = income) %>%
+  mutate(region = tolower(region)) %>% mutate(region = recode(region,
+                          "united states"    = "united states of america",
+                          "congo, dem. rep." = "democratic republic of the congo",
+                          "congo, rep."      = "republic of congo",
+                          "korea, dem. rep." = "south korea",
+                          "korea. rep."      = "north korea",
+                          "tanzania"         = "united republic of tanzania",
+                          "serbia"           = "republic of serbia",
+                          "slovak republic"  = "slovakia",
+                          "yemen, rep."      = "yemen",
+                          "cote d'ivoire"    = "ivory coast",
+                          "guinea-bissau"    = "guinea bissau"
+                          ))
+country_choropleth(plotdata,num_colors=9)+
+   scale_fill_brewer(palette="YlOrRd") +
+  labs(title = "income par country",
+       fill = "income")
+
+# Source: https://rkabacoff.github.io/datavis/GeoMaps.html#dot-density-maps
+#Inspiré de ce site
+```
+
+##### Country vs gdpp:
+
+```{r}
+plotdata <- df %>%
+  rename(region = country,
+         value = gdpp) %>%
+  mutate(region = tolower(region)) %>% mutate(region = recode(region,
+                          "united states"    = "united states of america",
+                          "congo, dem. rep." = "democratic republic of the congo",
+                          "congo, rep."      = "republic of congo",
+                          "korea, dem. rep." = "south korea",
+                          "korea. rep."      = "north korea",
+                          "tanzania"         = "united republic of tanzania",
+                          "serbia"           = "republic of serbia",
+                          "slovak republic"  = "slovakia",
+                          "yemen, rep."      = "yemen",
+                          "cote d'ivoire"    = "ivory coast",
+                          "guinea-bissau"    = "guinea bissau"
+                          ))
+country_choropleth(plotdata,num_colors=9)+
+   scale_fill_brewer(palette="YlOrRd") +
+  labs(title = "gdpp par country",
+       fill = "gdpp")
+
+# Source: https://rkabacoff.github.io/datavis/GeoMaps.html#dot-density-maps
+#Inspiré de ce site
+```
+
+##### Country vs child_fer:
+
+```{r}
+plotdata <- df %>%
+  rename(region = country,
+         value = child_mort) %>%
+  mutate(region = tolower(region)) %>% mutate(region = recode(region,
+                          "united states"    = "united states of america",
+                          "congo, dem. rep." = "democratic republic of the congo",
+                          "congo, rep."      = "republic of congo",
+                          "korea, dem. rep." = "south korea",
+                          "korea. rep."      = "north korea",
+                          "tanzania"         = "united republic of tanzania",
+                          "serbia"           = "republic of serbia",
+                          "slovak republic"  = "slovakia",
+                          "yemen, rep."      = "yemen",
+                          "cote d'ivoire"    = "ivory coast",
+                          "guinea-bissau"    = "guinea bissau"
+                          ))
+country_choropleth(plotdata,num_colors=9)+
+   scale_fill_brewer(palette="YlOrRd") +
+  labs(title = "child_mort par country",
+       fill = "child_mort")
+
+# Source: https://rkabacoff.github.io/datavis/GeoMaps.html#dot-density-maps
+#Inspiré de ce site
+```
+
+##### Country vs total_fer:
+
+```{r}
+plotdata <- df %>%
+  rename(region = country,
+         value = total_fer) %>%
+  mutate(region = tolower(region)) %>% mutate(region = recode(region,
+                          "united states"    = "united states of america",
+                          "congo, dem. rep." = "democratic republic of the congo",
+                          "congo, rep."      = "republic of congo",
+                          "korea, dem. rep." = "south korea",
+                          "korea. rep."      = "north korea",
+                          "tanzania"         = "united republic of tanzania",
+                          "serbia"           = "republic of serbia",
+                          "slovak republic"  = "slovakia",
+                          "yemen, rep."      = "yemen",
+                          "cote d'ivoire"    = "ivory coast",
+                          "guinea-bissau"    = "guinea bissau"
+                          ))
+country_choropleth(plotdata,num_colors=9)+
+   scale_fill_brewer(palette="YlOrRd") +
+  labs(title = "total_fer par country",
+       fill = "total_fer")
+
+# Source: https://rkabacoff.github.io/datavis/GeoMaps.html#dot-density-maps
+#Inspiré de ce site
+```
+
+#### Visualisation statistique:
+
+#### Corrélogramme des données numériques:
+
+```{r}
 R = cor(df_num)
 corrplot(R,type="lower")
 ```
 
 
+#### Corrélogramme réduit des données numériques pour extraire les variables dont
+#### la corrélation en valeur absolue est supérieure à 0.6:
+
 ```{r}
 #### Matrice de corrélation.
 ### Affichons la matrice de correlation pour les variables dont la valeur 
-### absolue de la corrélation est supérieure à 0.5
+### absolue de la corrélation est supérieure à 0.6
 
 #prepare to drop duplicates and correlations of 1     
 R[lower.tri(R,diag=TRUE)] <- NA 
@@ -175,6 +390,7 @@ On voit que gdpp et life_exp sont corrélés positivement. On peut conclure qu'a
 
 
 ```{r}
+### Normalisation des données
 df_norm <-
   df_num %>%
   mutate_all(scale)
@@ -182,8 +398,10 @@ rownames(df_norm)<-df[,1]
 head(df_norm)
 ```
 
+#### ACP sur les données normalisées:
 
 ```{r}
+# ACP sur les données normalisées
 acp<-PCA(df_norm,graph = FALSE)
 print(fviz_pca_ind(acp)) 
 ```
@@ -194,8 +412,43 @@ print(fviz_pca_var(acp))
 
 ```{r}
 acp$var$coord
+
+### COnclusion: ?
+```
+
+
+```{r}
+cos2_obs<-apply(acp$ind$cos2[,1:2],1,sum)
+bonne_projection<-cos2_obs[cos2_obs>=0.7] ## prenons 0.7 comme le seuil d'une bonne projection
+# Donc le pourcentage d'observations bien projeté est:
+(length(bonne_projection)/nrow(df_norm))*100
 ```
 ```{r}
+cos2_var<-apply(acp$var$cos2[,1:2],1,sum)
+bonne_projection<-cos2_var[cos2_var>=0.7] ## prenons 0.7 comme le seuil d'une bonne projection
+# Les variables bien projetées sont:
+print(bonne_projection)
+# Donc le pourcentage de variables bien projeté est:
+(length(bonne_projection)/ncol(df_norm))*100
+```
+
+```{r}
+### Les deux observations qui contribuent le plus aux axes 1 et 2.
+## Suggestion: On peut les enlever pour voir.
+rownames(acp$ind$contrib)[apply(acp$ind$contrib[,1:2],2,which.max)]
+
+```
+
+
+
+
+```{r}
+### Les deux variables qui contribuent le plus aux axes 1 et 2.
+rownames(acp$var$contrib)[apply(acp$var$contrib[,1:2],2,which.max)] ## axe 1 // axe 2
+contrib_var_ax1_ax2<-apply(acp$var$contrib[,1:2],1,sum)
+rownames(acp$var$contrib)[which.max(contrib_var_ax1_ax2)] ## axes 1 et 2
+ fviz_contrib(acp, "var", axes = 1)
+ fviz_contrib(acp, "var", axes = 2)
  fviz_contrib(acp, "var", axes = c(1,2))
 ```
 
@@ -209,8 +462,10 @@ acp$var$coord
 ```
 
 ```{r}
+### Interprètations
+
 acp[["eig"]][ , 1]
-fviz_eig(acp)
+fviz_eig(acp,addlabels = TRUE)
 
 ```
 
@@ -218,7 +473,24 @@ fviz_eig(acp)
 fviz_pca_ind(acp, col.ind = "contrib")
 ```
 
+#### K-means Clustering:
+
 ```{r}
+### K-means Clustering:
+kmeans_res <- kmeans(as.matrix(df_norm), centers = 2, iter.max = 20, nstart = 10)
+df_acp<-as.data.frame(acp$ind$coord[,1:2])
+rownames(df_acp)<-df[,1]
+df_acp["groupe"]<- factor(kmeans_res[["cluster"]])
+ggplot(df_acp, aes(x = Dim.1, y = Dim.2, col = groupe, label=rownames(df_acp) )) +
+  geom_text()
+
+```
+
+#### Hierarchical clustering:
+
+```{r}
+### Hierarchical clustering
+
 hc <- HCPC(df_norm, nb.clust = 2,graph = FALSE)
 
 ```
@@ -226,11 +498,34 @@ hc <- HCPC(df_norm, nb.clust = 2,graph = FALSE)
 fviz_dend(hc)
 fviz_cluster(hc, ggtheme = theme_bw())
 ```
-```{r}
-df_num$clust<-hc$data.clust$clust
-# ggplot(df_num,aes(x=log(income), y=log(gdpp),col=clust))+geom_point()+geom_smooth(method = "lm")
-ggplot(df_num,aes(x=clust,fill=clust))+geom_bar()
-```
 
+##### Visualisation GeoMap avec nos cluster (Hierarchical clustering) trouvés:
+
+```{r}
+df$groupe<-hc$data.clust$clust
+plotdata <- df %>%
+  rename(region = country,
+         value = groupe) %>%
+  mutate(region = tolower(region)) %>% mutate(region = recode(region,
+                          "united states"    = "united states of america",
+                          "congo, dem. rep." = "democratic republic of the congo",
+                          "congo, rep."      = "republic of congo",
+                          "korea, dem. rep." = "south korea",
+                          "korea. rep."      = "north korea",
+                          "tanzania"         = "united republic of tanzania",
+                          "serbia"           = "republic of serbia",
+                          "slovak republic"  = "slovakia",
+                          "yemen, rep."      = "yemen",
+                          "cote d'ivoire"    = "ivory coast",
+                          "guinea-bissau"    = "guinea bissau"
+                          ))
+country_choropleth(plotdata,num_colors=9)+
+   scale_fill_brewer(palette="YlOrRd") +
+  labs(title = "groupe par country",
+       fill = "groupe")
+
+# Source: https://rkabacoff.github.io/datavis/GeoMaps.html#dot-density-maps
+#Inspiré de ce site
+```
 
 
