@@ -1,0 +1,361 @@
+---
+title: "Travail Pratique 2"
+author: "Maurin AHANHANZO & Joseph Gamaliel FATAL"
+date: "11/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Importation des libraries:
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(skimr)
+library(probably)
+library(ROCR)
+```
+
+## Exercice 1)
+```{r}
+mnist_train <- read_csv("https://raw.githubusercontent.com/francisduval/devoir_2/main/mnist_train.csv")
+mnist_test <- read_csv("https://raw.githubusercontent.com/francisduval/devoir_2/main/mnist_test.csv")
+
+```
+```{r}
+train <- mnist_train %>% mutate(label = factor(label, levels = c("1", "7")))
+test <- mnist_test %>% mutate(label = factor(label, levels = c("1", "7")))
+```
+
+```{r}
+train %>% head()
+```
+
+
+```{r}
+sum(map_dbl(train, ~ sum(is.na(.))))
+sum(map_dbl(train, ~ sum(is.na(.))))
+```
+Il n'a aucune valeurs manquantes dans le train, ni dans le test
+
+```{r}
+train_x <- train %>% select(-label)
+train_y <- train %>% select(label) %>% pull()
+par(mfcol = c(6, 6))
+par(mar = c(0, 0, 3, 0), xaxs = "i", yaxs = "i")
+for(i in 1:36) {
+im_vec <- as.numeric(train_x[i, ])
+im_mat <- matrix(im_vec, ncol = 28)
+im_mat <- t(apply(im_mat, 1, rev))
+image(1:28, 1:28, im_mat, col = gray((0:255) / 255), xaxt = "n", yaxt = "n", main = train_y[i])
+}
+```
+
+# 1 - Proportion de 1 et de 7 dans notre train
+
+```{r}
+train %>%
+  count(label) %>%
+  mutate(prop = paste0(round((n / sum(n)) * 100, 2), "%"))
+
+```
+
+# Modèle utilisée : Knn
+
+### Prétraitement :
+
+```{r}
+rec_1 <-
+recipe(label ~ ., data = train) %>%
+step_nzv(all_predictors()) %>%
+step_normalize(all_predictors())
+
+```
+
+```{r}
+resamples <- vfold_cv(train, v = 5)
+
+```
+
+```{r}
+knn_spec <-
+nearest_neighbor(mode = "classification", neighbors = tune()) %>%
+set_engine("kknn")
+
+```
+
+```{r}
+wf_knn <-
+workflow() %>%
+add_model(knn_spec) %>%
+add_recipe(rec_1)
+
+```
+
+
+```{r}
+K = grid_regular(neighbors(range = c(1, 50)), levels = 50)
+
+cv_res_knn <-
+wf_knn %>%
+tune_grid(
+resamples = resamples,
+grid = K,
+metrics = metric_set(accuracy),
+control = control_resamples(save_pred = TRUE)
+)
+
+```
+
+```{r}
+collect_metrics(cv_res_knn)
+```
+
+```{r}
+k_optimal <- select_best(cv_res_knn)
+k_optimal
+```
+
+```{r}
+autoplot(cv_res_knn)
+```
+
+```{r}
+knn_opt_spec <-
+knn_spec <-
+nearest_neighbor(mode = "classification", neighbors = k_optimal[["neighbors"]]) %>%
+set_engine("kknn")
+
+```
+
+```{r}
+knn_opt_workflow <-
+wf_knn %>%
+update_model(knn_opt_spec)
+
+```
+
+```{r}
+knn_optimal_fit <- 
+  knn_opt_workflow %>%
+  fit(data = train)
+```
+
+```{r}
+knn_optimal_predict_test <- 
+  knn_optimal_fit %>%
+  predict(new_data = test, type = "class")
+```
+
+```{r}
+ech <- test[knn_optimal_predict_test[[".pred_class"]]!=test[["label"]],] 
+ech_x <- ech %>% select(-label)
+y_pred <- knn_optimal_predict_test[[".pred_class"]][knn_optimal_predict_test[[".pred_class"]]!=test[["label"]]]
+par(mfcol = c(2, 2))
+par(mar = c(0, 0, 3, 0), xaxs = "i", yaxs = "i")
+for(i in 1:nrow(ech)) {
+im_vec <- as.numeric(ech_x[i, ])
+im_mat <- matrix(im_vec, ncol = 28)
+im_mat <- t(apply(im_mat, 1, rev))
+image(1:28, 1:28, im_mat, col = gray((0:255) / 255), xaxt = "n", yaxt = "n", main = y_pred[i])
+}
+```
+
+```{r}
+df <- as.data.frame(cbind(test$label,knn_optimal_predict_test))
+df <- df %>% rename(truth = "test$label", estimate = ".pred_class")
+accuracy(df, truth = truth, estimate = estimate)
+```
+
+```{r}
+pred_1 <- knn_optimal_fit %>%
+  predict(new_data = test, type = "prob")
+pred_1 <- pred_1$.pred_1
+df %>%
+    mutate(estimate = make_two_class_pred(pred_1, 
+                                             levels(df$truth),
+                                             threshold = 0.5),
+           estimate = factor(estimate, levels = levels(df$truth))) %>%
+    conf_mat(truth, estimate)
+
+df %>% sens(truth, estimate)
+df %>% spec(truth, estimate)
+df %>% accuracy(truth, estimate)
+```
+
+
+### Exercice 2:
+
+```{r}
+claims <- read_csv("https://raw.githubusercontent.com/francisduval/devoir_2/main/claims.csv")
+claims %>% head()
+```
+
+```{r}
+claims <-
+claims %>%
+mutate(claim = as.factor(claim)) %>%
+mutate_if(is.character, as.factor)
+
+```
+
+```{r}
+skim(claims)
+```
+
+```{r}
+claims_split <- initial_split(claims, prop = 0.7) 
+claims_train <- training(claims_split)
+claims_test <- testing(claims_split)
+```
+
+```{r}
+recette <- 
+  recipe(claim ~ ., data = claims_train) %>%
+  step_impute_mode(all_nominal_predictors()) %>% 
+  step_impute_median(all_numeric_predictors()) %>% 
+  step_other(all_nominal_predictors(), threshold = .05, other = "other values") %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_normalize(all_predictors())
+```
+```{r}
+recette_prep <- prep(recette) 
+claims_train_pretraite <- bake(recette_prep, new_data = claims_train)
+```
+```{r}
+skim(claims_train_pretraite)
+```
+
+# Model specification
+
+```{r}
+lasso_spec <-
+  logistic_reg(mode = "classification",
+               penalty = tune(),
+               mixture = 1)  %>%
+  set_engine("glmnet") 
+```
+
+# Spécifier la validation croisée:
+
+
+```{r}
+resamples <- vfold_cv(claims_train, v = 5)
+```
+
+# workflow : Combine le modèle et le recipe.
+```{r}
+wf_claims <- 
+  workflow() %>% 
+  add_model(lasso_spec) %>% 
+  add_recipe(recette)
+```
+
+# Hyperparamter grid
+
+```{r}
+lambda_grid <- grid_regular(penalty(range = c(-10, 5), trans = log10_trans()), levels = 50)
+```
+
+# Faire la validation croisée:
+
+
+```{r}
+tune_res <-
+  wf_claims %>% 
+  tune_grid(
+    resamples = resamples,
+    grid = lambda_grid,
+    metrics = metric_set(roc_auc),
+    control = control_resamples(save_pred = TRUE)
+  )
+```
+
+
+```{r}
+collect_metrics(tune_res) %>% 
+  ggplot(aes(x = penalty, y = mean)) +
+  geom_line() +
+  geom_point() +
+  scale_x_log10() +
+  ylab("AUC") +
+  xlab("Lambda")
+```
+
+# Modèle avec le lasso optimal
+
+```{r}
+lambda_optimal <- select_best(tune_res)$penalty
+lambda_optimal
+```
+
+
+```{r}
+lasso_opt_spec <-
+  logistic_reg(
+    mode = "classification",
+    penalty = lambda_optimal,
+    mixture = 1
+  ) %>% 
+  set_engine("glmnet") 
+```
+
+# Mettre ajour le workflow
+
+```{r}
+wf_claims_opt <- 
+  wf_claims %>%
+  update_model(lasso_opt_spec)
+```
+
+# Entrainer ton modèle sur te tran set et le tester sur test set
+
+
+```{r}
+last_lasso_fit <-
+  wf_claims_opt %>%
+  last_fit(claims_split)
+```
+```{r}
+collect_metrics(last_lasso_fit)
+```
+```{r}
+
+last_lasso_fit %>% 
+  collect_predictions() %>% 
+  roc_curve(truth = claim, 
+            estimate = .pred_0) %>% 
+  ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+  geom_line(color = "red", size = 1) +
+  geom_abline(lty = 2, alpha = 0.5, color = "black", size = 1.2) +
+  ggtitle("Courbe ROC")
+
+collect_metrics(last_lasso_fit)
+```
+
+
+```{r}
+coefs_data <- 
+  wf_claims %>% 
+  finalize_workflow(select_best(tune_res)) %>%
+  fit(claims_train) %>%
+  pull_workflow_fit() %>%
+  tidy() %>% 
+  filter(term != "(Intercept)") %>% 
+  mutate(signe = if_else(estimate > 0, "+", "-")) %>% 
+  mutate(abs_estimate = abs(estimate)) %>% 
+  mutate(term = fct_reorder(term, abs_estimate))
+    
+```
+```{r}
+  ggplot(coefs_data[coefs_data$abs_estimate >0 ,], aes(x = term, y = abs_estimate, fill = signe)) +
+    geom_col(alpha = 0.7) +
+    xlab(NULL) +
+    ylab("Valeur absolue du coefficient") +
+    scale_fill_manual(values = c("#a61d21", "#00743F")) +
+    coord_flip()
+```
+
