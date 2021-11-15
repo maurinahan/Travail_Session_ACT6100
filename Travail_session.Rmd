@@ -1,18 +1,24 @@
 ---
-title: "Travail_Session_1_ACT6100"
-author: "Maurin AHANHANZO & Gamaliel FATAL"
-date: "`r format(Sys.time(), '%d %B %Y')`"
-output: pdf_document
+title: "Travail Pratique I"
+author: "Maurin AHANHANZO (AHAM81050000) & Joseph Gamaliel FATAL (FATJ05118007)"
+date: "04/11/2021"
+output: html_document
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### I)	Contexte
+Dans le cadre du cours ACT6100, il nous a été demandés de conduire une analyse exploratoire sur un jeu de données de notre choix. Ainsi, nous avons mené cette étude exploratoire sur une base de données contenant le PIB ainsi que les agrégats macro-économiques dans le monde. 
 
 
 #### Importation des libraries:
 
-```{r echo=TRUE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
 #install.packages("choroplethrMaps") # installer le package si vous l'avez pas
 #install.packages("choroplethr") # installer le package si vous l'avez pas
 library("choroplethr")
-library("ggmap")
 library("dplyr")
 library("tidyverse")
 library("FactoMineR")
@@ -21,10 +27,11 @@ library("ggplot2")
 library("corrplot")
 ```
 
-### Mise en Activité
+### II) Mise en Activité
 
 #### Exploration de la Base de données:
-
+La  base utilisée se trouve sur ce site:
+https://www.kaggle.com/rohan0301/unsupervised-learning-on-country-data
 
 ```{r}
 ### Apercu de la base de données
@@ -44,30 +51,30 @@ colnames(df)
 
 Explication des colonnes de la base de données:
 
-- Country: 
-- Child_mort: Décès d'enfants de moins de 5 ans pour 1000 naissances
+-   Country: pays
 
-- Exports : Exportations de biens et services par habitant (en pourcentage du PIB par habitant).
+-   Child_mort: Décès d'enfants de moins de 5 ans pour 1000 naissances
 
-- Health: Dépenses totales de santé par habitant  (en pourcentage du PIB par habitant).
+-   Exports : Exportations de biens et services par habitant (en pourcentage du PIB par habitant).
 
-- Imports: Importations de biens et services par habitant (en pourcentage du PIB par habitant).
+-   Health: Dépenses totales de santé par habitant (en pourcentage du PIB par habitant).
 
-- Income: Revenu net moyen par personne.
+-   Imports: Importations de biens et services par habitant (en pourcentage du PIB par habitant).
 
-- Inflation: La mesure du taux de croissance annuel du PIB total.
+-   Income: Revenu net moyen par personne.
 
-- Life expec : Espérance de vie moyenne à la naissance.
+-   Inflation: La mesure du taux de croissance annuel du PIB total.
 
-- Total_fer: le nombre d'enfants moyen par femme en âge de procréation.
+-   Life expec : Espérance de vie moyenne à la naissance.
 
-- GDP: PIB par habitant.
+-   Total_fer: le nombre d'enfants moyen par femme en âge de procréation.
+
+-   GDP: PIB par habitant.
 
 ```{r}
 #### Vérification si df à des valeurs manquantes:
 apply(df, 2, function(x) sum(is.na(x)))
 ```
-
 
 ```{r}
 str(df)
@@ -75,87 +82,109 @@ str(df)
 
 ```{r}
 ## Statistiques descriptives :
-df_num<-df %>% 
+df_num <- df %>%
   select_if(is.numeric)
-df_num  %>% 
+df_num  %>%
   summary()
 ```
-On constate que nos variables numériques ne sont pas toutes sur la même échelle de valeur. On a gdpp et income qui ont de grandes valeurs comparées aux autres variables.
 
+On constate que nos variables numériques ne sont pas toutes sur la même échelle de valeur. On a gdpp et income qui ont de grandes valeurs comparées aux autres variables.
 
 #### Visualisation:
 
 ##### Histogramme de Child_mort:
 
 ```{r}
-ggplot(df_num, aes(x = child_mort, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramme de child_mort (mortalité infantile)", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = child_mort)) +
+  geom_histogram() + labs(title = "Histogramme de child_mort (mortalité infantile)",
+                          subtitle = "number of bins = 20")
 ```
+
+La distribution de child_mort est asymétrique et on constate qu'il y a un volume considérable de pays qui présentent une valeur de child mort mais on voit également un groupe de pays avec des grandes valeurs de child mort allant jusqu'à avoir une valeur de child mort supérieur à 200 (5 fois la moyenne).
 
 ##### Histogramme de exports:
 
 ```{r}
-ggplot(df_num, aes(x = exports, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramme de exports (exportations)", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = exports)) +
+  geom_histogram() + labs(title = "Histogramme de exports (exportations)",
+                          subtitle = "number of bins = 20")
 ```
+
+On voit sur cet histogramme que la majeure partie des pays se concentrent entre 0 et 100 pour exports mais toutefois il y a des valeurs aberrantes.
 
 ##### Histogramme de health:
 
 ```{r}
-ggplot(df_num, aes(x = health, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramme de health (Dépense de santé par habitant)", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = health)) +
+  geom_histogram() + labs(title = "Histogramme de health (Dépense de santé par habitant)", subtitle = "number of bins = 20")
 ```
+
+on voit que la majeure partie des pays ont des valeurs pour la variable health allant de 0 à 12 mais on a toutefois des valeurs aberrantes. 
 
 ##### Histogramme de imports:
+
 ```{r}
 
-ggplot(df_num, aes(x = imports, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramme de imports (importations)", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = imports)) +
+  geom_histogram() + labs(title = "Histogramme de imports (importations)",
+                          subtitle = "number of bins = 20")
 ```
+
+On voit que la majeure partie des pays ont des valeurs pour la variable health allant de 0 à 100 mais on a toutefois des valeurs aberrantes.
 
 ##### Histogramme de gdpp:
 
 ```{r}
-ggplot(df_num, aes(x = gdpp, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramme de gdpp (PIB)", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = gdpp)) +
+  geom_histogram() + labs(title = "Histogramme de gdpp (PIB)",
+                          subtitle = "number of bins = 20")
 
 ```
+
+On voit deux distribution, une asymétrique allant de 0 à 30000 et l'autre de 30000 à 90000. On voit qu'il semble y avoir une repartition en 2 de nos variables gdpp. 
 
 ##### Histogramme de total_fer:
 
 ```{r}
-ggplot(df_num, aes(x = total_fer, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramme de total_fer", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = total_fer)) +
+  geom_histogram() + labs(title = "Histogramme de total_fer",
+                          subtitle = "number of bins = 20")
 
 ```
+
+On voit deux distributions, une asymétrique allant de 0 à 4 et l'autre de 4 à 6. On voit qu'il semble y avoir une repartition en 2 de nos variables gdpp. 
 
 ##### Histogramme de income:
+
 ```{r}
-ggplot(df_num, aes(x = income, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramm de income", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = income)) +
+  geom_histogram() + labs(title = "Histogramm de income",
+                          subtitle = "number of bins = 20")
 
 ```
+
+On a ici une distribution asymétrique à gauche avec plusieurs pays concentrés à gauche et ayant des revenus faibles et plus bas que la moyenne mais on voit toutefois des valeurs aberrantes.
 
 ##### Histogramme de inflation:
+
 ```{r}
-ggplot(df_num, aes(x = inflation, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramm de inflation", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = inflation)) +
+  geom_histogram() + labs(title = "Histogramm de inflation",
+                          subtitle = "number of bins = 20")
 ```
+
+On a ici une distribution asymétrique à gauche avec plusieurs pays concentrés à gauche et ayant un niveau d'inflation faible et plus bas que la moyenne mais on voit toutefois des valeurs aberrantes. 
+
 ##### Histogramme de life_expec:
+
 ```{r}
 
-ggplot(df_num, aes(x = life_expec, fill="cornflowerblue")) +
-  geom_histogram()+ labs(title="Histogramme de life_expec", 
-       subtitle = "number of bins = 20")
+ggplot(df_num, aes(x = life_expec)) +
+  geom_histogram() + labs(title = "Histogramme de life_expec",
+                          subtitle = "number of bins = 20")
 ```
+
+On a ici une distribution asymétrique à droite avec plusieurs pays concentrés à droite mais il a toutefois des valeurs aberrantes avec des pays avec un life_expec plus bas que la moyenne.
 
 #### Visualisation GeoMap:
 
@@ -165,21 +194,24 @@ ggplot(df_num, aes(x = life_expec, fill="cornflowerblue")) +
 plotdata <- df %>%
   rename(region = country,
          value = life_expec) %>%
-  mutate(region = tolower(region)) %>% mutate(region = recode(region,
-                          "united states"    = "united states of america",
-                          "congo, dem. rep." = "democratic republic of the congo",
-                          "congo, rep."      = "republic of congo",
-                          "korea, dem. rep." = "south korea",
-                          "korea. rep."      = "north korea",
-                          "tanzania"         = "united republic of tanzania",
-                          "serbia"           = "republic of serbia",
-                          "slovak republic"  = "slovakia",
-                          "yemen, rep."      = "yemen",
-                          "cote d'ivoire"    = "ivory coast",
-                          "guinea-bissau"    = "guinea bissau"
-                          ))
-country_choropleth(plotdata,num_colors=9)+
-   scale_fill_brewer(palette="YlOrRd") +
+  mutate(region = tolower(region)) %>% mutate(
+    region = recode(
+      region,
+      "united states"    = "united states of america",
+      "congo, dem. rep." = "democratic republic of the congo",
+      "congo, rep."      = "republic of congo",
+      "korea, dem. rep." = "south korea",
+      "korea. rep."      = "north korea",
+      "tanzania"         = "united republic of tanzania",
+      "serbia"           = "republic of serbia",
+      "slovak republic"  = "slovakia",
+      "yemen, rep."      = "yemen",
+      "cote d'ivoire"    = "ivory coast",
+      "guinea-bissau"    = "guinea bissau"
+    )
+  )
+country_choropleth(plotdata, num_colors = 9) +
+  scale_fill_brewer(palette = "YlOrRd") +
   labs(title = "life_exp par country",
        fill = "life_expec")
 
@@ -187,27 +219,32 @@ country_choropleth(plotdata,num_colors=9)+
 #Inspiré de ce site
 ```
 
+On voit sur ce graphique que les pays du Sud présentent un life_expec bas que les autres. On voit également que les pays du nord ont des niveaux de vies plus élevés.
+
 ##### Country vs income:
 
 ```{r}
 plotdata <- df %>%
   rename(region = country,
          value = income) %>%
-  mutate(region = tolower(region)) %>% mutate(region = recode(region,
-                          "united states"    = "united states of america",
-                          "congo, dem. rep." = "democratic republic of the congo",
-                          "congo, rep."      = "republic of congo",
-                          "korea, dem. rep." = "south korea",
-                          "korea. rep."      = "north korea",
-                          "tanzania"         = "united republic of tanzania",
-                          "serbia"           = "republic of serbia",
-                          "slovak republic"  = "slovakia",
-                          "yemen, rep."      = "yemen",
-                          "cote d'ivoire"    = "ivory coast",
-                          "guinea-bissau"    = "guinea bissau"
-                          ))
-country_choropleth(plotdata,num_colors=9)+
-   scale_fill_brewer(palette="YlOrRd") +
+  mutate(region = tolower(region)) %>% mutate(
+    region = recode(
+      region,
+      "united states"    = "united states of america",
+      "congo, dem. rep." = "democratic republic of the congo",
+      "congo, rep."      = "republic of congo",
+      "korea, dem. rep." = "south korea",
+      "korea. rep."      = "north korea",
+      "tanzania"         = "united republic of tanzania",
+      "serbia"           = "republic of serbia",
+      "slovak republic"  = "slovakia",
+      "yemen, rep."      = "yemen",
+      "cote d'ivoire"    = "ivory coast",
+      "guinea-bissau"    = "guinea bissau"
+    )
+  )
+country_choropleth(plotdata, num_colors = 9) +
+  scale_fill_brewer(palette = "YlOrRd") +
   labs(title = "income par country",
        fill = "income")
 
@@ -215,27 +252,32 @@ country_choropleth(plotdata,num_colors=9)+
 #Inspiré de ce site
 ```
 
+Même constat que tantôt, les pays du nord gagnent mieux que les pays du Sud,etc.
+
 ##### Country vs gdpp:
 
 ```{r}
 plotdata <- df %>%
   rename(region = country,
          value = gdpp) %>%
-  mutate(region = tolower(region)) %>% mutate(region = recode(region,
-                          "united states"    = "united states of america",
-                          "congo, dem. rep." = "democratic republic of the congo",
-                          "congo, rep."      = "republic of congo",
-                          "korea, dem. rep." = "south korea",
-                          "korea. rep."      = "north korea",
-                          "tanzania"         = "united republic of tanzania",
-                          "serbia"           = "republic of serbia",
-                          "slovak republic"  = "slovakia",
-                          "yemen, rep."      = "yemen",
-                          "cote d'ivoire"    = "ivory coast",
-                          "guinea-bissau"    = "guinea bissau"
-                          ))
-country_choropleth(plotdata,num_colors=9)+
-   scale_fill_brewer(palette="YlOrRd") +
+  mutate(region = tolower(region)) %>% mutate(
+    region = recode(
+      region,
+      "united states"    = "united states of america",
+      "congo, dem. rep." = "democratic republic of the congo",
+      "congo, rep."      = "republic of congo",
+      "korea, dem. rep." = "south korea",
+      "korea. rep."      = "north korea",
+      "tanzania"         = "united republic of tanzania",
+      "serbia"           = "republic of serbia",
+      "slovak republic"  = "slovakia",
+      "yemen, rep."      = "yemen",
+      "cote d'ivoire"    = "ivory coast",
+      "guinea-bissau"    = "guinea bissau"
+    )
+  )
+country_choropleth(plotdata, num_colors = 9) +
+  scale_fill_brewer(palette = "YlOrRd") +
   labs(title = "gdpp par country",
        fill = "gdpp")
 
@@ -243,27 +285,32 @@ country_choropleth(plotdata,num_colors=9)+
 #Inspiré de ce site
 ```
 
+Même constat pour le gdpp, les pays du nord ont un pays plus élevé que ceux des pays du Sud, etc.
+
 ##### Country vs child_fer:
 
 ```{r}
 plotdata <- df %>%
   rename(region = country,
          value = child_mort) %>%
-  mutate(region = tolower(region)) %>% mutate(region = recode(region,
-                          "united states"    = "united states of america",
-                          "congo, dem. rep." = "democratic republic of the congo",
-                          "congo, rep."      = "republic of congo",
-                          "korea, dem. rep." = "south korea",
-                          "korea. rep."      = "north korea",
-                          "tanzania"         = "united republic of tanzania",
-                          "serbia"           = "republic of serbia",
-                          "slovak republic"  = "slovakia",
-                          "yemen, rep."      = "yemen",
-                          "cote d'ivoire"    = "ivory coast",
-                          "guinea-bissau"    = "guinea bissau"
-                          ))
-country_choropleth(plotdata,num_colors=9)+
-   scale_fill_brewer(palette="YlOrRd") +
+  mutate(region = tolower(region)) %>% mutate(
+    region = recode(
+      region,
+      "united states"    = "united states of america",
+      "congo, dem. rep." = "democratic republic of the congo",
+      "congo, rep."      = "republic of congo",
+      "korea, dem. rep." = "south korea",
+      "korea. rep."      = "north korea",
+      "tanzania"         = "united republic of tanzania",
+      "serbia"           = "republic of serbia",
+      "slovak republic"  = "slovakia",
+      "yemen, rep."      = "yemen",
+      "cote d'ivoire"    = "ivory coast",
+      "guinea-bissau"    = "guinea bissau"
+    )
+  )
+country_choropleth(plotdata, num_colors = 9) +
+  scale_fill_brewer(palette = "YlOrRd") +
   labs(title = "child_mort par country",
        fill = "child_mort")
 
@@ -271,27 +318,32 @@ country_choropleth(plotdata,num_colors=9)+
 #Inspiré de ce site
 ```
 
+On voit que les choses sont inversées ici. On constate les pays du Sud ont le plus grand nombre de mortalité infantile.
+
 ##### Country vs total_fer:
 
 ```{r}
 plotdata <- df %>%
   rename(region = country,
          value = total_fer) %>%
-  mutate(region = tolower(region)) %>% mutate(region = recode(region,
-                          "united states"    = "united states of america",
-                          "congo, dem. rep." = "democratic republic of the congo",
-                          "congo, rep."      = "republic of congo",
-                          "korea, dem. rep." = "south korea",
-                          "korea. rep."      = "north korea",
-                          "tanzania"         = "united republic of tanzania",
-                          "serbia"           = "republic of serbia",
-                          "slovak republic"  = "slovakia",
-                          "yemen, rep."      = "yemen",
-                          "cote d'ivoire"    = "ivory coast",
-                          "guinea-bissau"    = "guinea bissau"
-                          ))
-country_choropleth(plotdata,num_colors=9)+
-   scale_fill_brewer(palette="YlOrRd") +
+  mutate(region = tolower(region)) %>% mutate(
+    region = recode(
+      region,
+      "united states"    = "united states of america",
+      "congo, dem. rep." = "democratic republic of the congo",
+      "congo, rep."      = "republic of congo",
+      "korea, dem. rep." = "south korea",
+      "korea. rep."      = "north korea",
+      "tanzania"         = "united republic of tanzania",
+      "serbia"           = "republic of serbia",
+      "slovak republic"  = "slovakia",
+      "yemen, rep."      = "yemen",
+      "cote d'ivoire"    = "ivory coast",
+      "guinea-bissau"    = "guinea bissau"
+    )
+  )
+country_choropleth(plotdata, num_colors = 9) +
+  scale_fill_brewer(palette = "YlOrRd") +
   labs(title = "total_fer par country",
        fill = "total_fer")
 
@@ -299,45 +351,52 @@ country_choropleth(plotdata,num_colors=9)+
 #Inspiré de ce site
 ```
 
+Même constat que child_mort, dans les pays du Sud, On a tendance à avoir plus d'enfants par femme en âge de procréation.
+
+On sent voir qu'il a une repartition qui se dessine. On voit qu'on a deux groupes:
+
+-   Un groupe avec des pays ayant des gdpp élevés, des revenus(income) élevés, nombre d'enfants par femmes (total_fer) faible, nombre de mortalité infantile(child_mort) faible. 
+
+-  Un groupe avec des pays ayant des gdpp faibles, des revenus(income) faibles, nombre d'enfants par femmes (total_fer) élevé, nombre de mortalité infantile(child_mort) élevé.
+
+Vu cela, on aimerait confirmer ou infirmer si rééllement on peut répartir les pays dans ces deux groupes énumérés plus haut. Ceci nous amène à utiliser des méthodes d'apprentissage non supervisées pour donc faire cela.
+
 #### Visualisation statistique:
 
 #### Corrélogramme des données numériques:
 
 ```{r}
 R = cor(df_num)
-corrplot(R,type="lower")
+corrplot(R, type = "lower")
 ```
 
-
 #### Corrélogramme réduit des données numériques pour extraire les variables dont
+
 #### la corrélation en valeur absolue est supérieure à 0.6:
 
 ```{r}
 #### Matrice de corrélation.
-### Affichons la matrice de correlation pour les variables dont la valeur 
+### Affichons la matrice de correlation pour les variables dont la valeur
 ### absolue de la corrélation est supérieure à 0.6
 
-#prepare to drop duplicates and correlations of 1     
-R[lower.tri(R,diag=TRUE)] <- NA 
-#drop perfect correlations
-R[R == 1] <- NA 
+R[lower.tri(R, diag = TRUE)] <- NA
+R[R == 1] <- NA
 
 sig = 0.6
-#turn into a 3-column table
 corr <- as.data.frame(as.table(R))
-#remove the NA values from above 
-corr <- na.omit(corr) 
-#select significant values  
-corr <- subset(corr, abs(Freq) > sig) 
-#sort by highest correlation
-corr <- corr[order(-abs(corr$Freq)),] 
-#print table
+corr <- na.omit(corr)
+corr <- subset(corr, abs(Freq) > sig)
+corr <- corr[order(-abs(corr$Freq)), ]
+
 print(corr)
-#turn corr back into matrix in order to plot with corrplot
+
 library("reshape2")
-mtx_corr <- acast(corr, Var1~Var2, value.var="Freq")
-#plot correlations visually
-corrplot(mtx_corr, is.corr=FALSE, tl.col="black", na.label=" ")
+mtx_corr <- acast(corr, Var1 ~ Var2, value.var = "Freq")
+
+corrplot(mtx_corr,
+         is.corr = FALSE,
+         tl.col = "black",
+         na.label = " ")
 ```
 
 On en ressort sept couples de variables dont la corrélation en valeur absolue entre elles sont supérieures à 0.6. Visualisons les:
@@ -349,44 +408,45 @@ ggplot(df,aes(x=log(income), y=log(gdpp)))+geom_point()+geom_smooth(method = "lm
 
 On voit que income et gdpp sont fortement correlés positivement. On peut conclure au vu de ce graphique qu'un pays avec un revenu net moyen par personne à tendance à avoir un PIB élevé et vice-versa.
 
-
 ```{r}
 ggplot(df,aes(x=child_mort, y=life_expec))+geom_point()+geom_smooth(method=lm)
 
 ```
 
-On voit que child_mort et life_expec sont fortement correlés négativement. On peut conclure au vu de ce graphique qu'un pays avec un taux de mortalité infantile élevé à tendance à avoir une espérance de vie moyenne par personne faible et un pays avec espérance de vie moyenne par personne élevée à tendance à avoir une espérance de vie faible.
+On voit que child_mort et life_expec sont fortement correlés négativement. On peut conclure au vu de ce graphique qu'un pays avec un taux de mortalité infantile élevé à tendance à avoir une espérance de vie moyenne par personne faible et un pays avec une espérance de vie moyenne par personne élevée à tendance à avoir un taux de mortalité faible.
 
 ```{r}
 ggplot(df,aes(x=child_mort, y=total_fer))+geom_point()+geom_smooth(method=lm)
 
 ```
 
-On voit que child_mort et total_fer sont fortement correlés positivement. On peut conclure qu'au vu de ce graphique qu'un pays avec un taux de mortalité infantile élevé à tendance à avoir un taux de fécondité élevé moyen par femme et vice-versa.
+On voit que child_mort et total_fer sont fortement correlés positivement. On peut conclure qu'au vu de ce graphique qu'un pays avec un taux de mortalité infantile élevé à tendance à avoir un taux de fécondité élevé moyen par femme en âge de procréation et vice-versa.
 
 ```{r}
 ggplot(df,aes(x=life_expec, y=total_fer))+geom_point()+geom_smooth(method=lm)
 
 ```
-On voit que life_expec et total_fer sont fortement correlés négativement. On peut conclure au vu de ce graphique qu'un pays avec une espérance de vie moyenne par personne élevée à tendance à avoir un taux de fécondité par femme par personne faible.
+
+On voit que life_expec et total_fer sont fortement correlés négativement. On peut conclure au vu de ce graphique qu'un pays avec une espérance de vie moyenne par personne élevée à tendance à avoir un taux de fécondité par femme en âge de procréation faible.
 
 ```{r}
 ggplot(df,aes(x=exports, y=imports))+geom_point()+geom_smooth(method=lm)
 
 ```
+
 On voit que exports et imports sont fortement liés positivement. On peut conclure qu'au vu de ce graphique qu'un pays qui exporte beaucoup à tendance à importer beaucoup également.
 
 ```{r}
 ggplot(df,aes(x=log(income), y=life_expec))+geom_point()+geom_smooth(method=lm)
 ```
-On voit que income et life_exp sont corrélés positivement. On peut conclure qu'au vu de ce graphique qu'un pays avec un revenu net moyen par personne élevé à tendance à avoir une espérance de vie moyenne élevée.
 
+On voit que income et life_exp sont corrélés positivement. On peut conclure qu'au vu de ce graphique qu'un pays avec un revenu net moyen par personne élevé à tendance à avoir une espérance de vie moyenne élevée.
 
 ```{r}
 ggplot(df,aes(x=life_expec, y=log(gdpp)))+geom_point()+geom_smooth(method=lm)
 ```
-On voit que gdpp et life_exp sont corrélés positivement. On peut conclure qu'au vu de ce graphique qu'un pays avec une espérance de vie moyenne élevée à tendance à avoir un PIB élevé. Ceci est pertinent puisque income et gdpp sont fortement correlés entre eux et income est correlés avec life_expec.
 
+On voit que gdpp et life_exp sont corrélés positivement. On peut conclure qu'au vu de ce graphique qu'un pays avec une espérance de vie moyenne élevée à tendance à avoir un PIB élevé. Ceci est pertinent puisque income et gdpp sont fortement correlés entre eux et income est correlé avec life_expec.
 
 
 ```{r}
@@ -394,7 +454,7 @@ On voit que gdpp et life_exp sont corrélés positivement. On peut conclure qu'a
 df_norm <-
   df_num %>%
   mutate_all(scale)
-rownames(df_norm)<-df[,1]
+rownames(df_norm) <- df[, 1]
 head(df_norm)
 ```
 
@@ -402,13 +462,21 @@ head(df_norm)
 
 ```{r}
 # ACP sur les données normalisées
-acp<-PCA(df_norm,graph = FALSE)
+acp <- PCA(df_norm, graph = FALSE)
 print(fviz_pca_ind(acp)) 
 ```
+
+Le plan principal de l'ACP explique 63.2 % des données initiales. Ce qui semble quand même être une bonne valeur.
+
+### Cercle des corrélations
 
 ```{r}
 print(fviz_pca_var(acp))
 ```
+
+On peut voir graphiquement que les variables inflation, health sont mal projetées sur le plan parce que la longueur des vecteurs les caractérisant est faible et loin de 1. On voit également que gdpp, income sont très correlés positivement à l'axe 1, child et total_fer correlés négativement à l'axe 1 et imports et exports à l'axe 2. On peut dire que l'axe 1 mesure le niveau socio-économique d'un pays et l'axe 2 mesure la capacité que le pays a d'importer et d'exporter.
+
+Confirmons notre analyse graphique par celle numérique
 
 ```{r}
 acp$var$coord
@@ -416,50 +484,7 @@ acp$var$coord
 ### COnclusion: ?
 ```
 
-
-```{r}
-cos2_obs<-apply(acp$ind$cos2[,1:2],1,sum)
-bonne_projection<-cos2_obs[cos2_obs>=0.7] ## prenons 0.7 comme le seuil d'une bonne projection
-# Donc le pourcentage d'observations bien projeté est:
-(length(bonne_projection)/nrow(df_norm))*100
-```
-```{r}
-cos2_var<-apply(acp$var$cos2[,1:2],1,sum)
-bonne_projection<-cos2_var[cos2_var>=0.7] ## prenons 0.7 comme le seuil d'une bonne projection
-# Les variables bien projetées sont:
-print(bonne_projection)
-# Donc le pourcentage de variables bien projeté est:
-(length(bonne_projection)/ncol(df_norm))*100
-```
-
-```{r}
-### Les deux observations qui contribuent le plus aux axes 1 et 2.
-## Suggestion: On peut les enlever pour voir.
-rownames(acp$ind$contrib)[apply(acp$ind$contrib[,1:2],2,which.max)]
-
-```
-
-
-
-
-```{r}
-### Les deux variables qui contribuent le plus aux axes 1 et 2.
-rownames(acp$var$contrib)[apply(acp$var$contrib[,1:2],2,which.max)] ## axe 1 // axe 2
-contrib_var_ax1_ax2<-apply(acp$var$contrib[,1:2],1,sum)
-rownames(acp$var$contrib)[which.max(contrib_var_ax1_ax2)] ## axes 1 et 2
- fviz_contrib(acp, "var", axes = 1)
- fviz_contrib(acp, "var", axes = 2)
- fviz_contrib(acp, "var", axes = c(1,2))
-```
-
-```{r}
-fviz_pca_biplot(acp, pointsize = "cos2", col.var = "cos2")
-
-```
-
-```{r}
-acp$var$coord
-```
+Ceci confirme ce qui est dit plus haut. child_mort, income, gdpp, total_fer et life_expec sont correlés à la dimension 1 de l'ACP et imports et exports à la dimension 2.
 
 ```{r}
 ### Interprètations
@@ -469,11 +494,105 @@ fviz_eig(acp,addlabels = TRUE)
 
 ```
 
+L'axe 1 et l'axe 2 explique en grande partie l'information de nos données initiales, on peut donc se fier au plan principal pour la suite de notre analyse.
+
+# Qualité de projections des observations sur le plan principal:
+
+Regardons la qualité de projection des observations sur le le plan principal
+
 ```{r}
-fviz_pca_ind(acp, col.ind = "contrib")
+cos2_obs <- apply(acp$ind$cos2[, 1:2], 1, sum)
+
+## prenons 0.6 comme le seuil d'une bonne projection
+bonne_projection_ind <- cos2_obs[cos2_obs >= 0.6] 
+
+# Les observations bien projetées sont:
+sort(names(bonne_projection_ind))
+
+sort(bonne_projection_ind,decreasing = TRUE)[1:5]
+# Donc le pourcentage d'observations bien projetées est:
+(length(bonne_projection_ind) / nrow(df_norm)) * 100
 ```
 
+On a Singapore, Spain, Italy, Ghana et Brazil qui sont les 5 observations les mieux projetées.
+
+Et selon notre seuil choisi(0.6) 50.8982 % des observations sont bien projetées.
+
+# Qualité de projections des variables:
+
+```{r}
+cos2_var <- apply(acp$var$cos2[,1:2],1,sum)
+
+## prenons 0.6 comme le seuil d'une bonne projection
+bonne_projection_var <- cos2_var[cos2_var >= 0.6] 
+
+# Les variables bien projetées sont:
+print(sort(bonne_projection_var,decreasing = TRUE))
+
+# Donc le pourcentage de variables bien projeté est:
+(length(bonne_projection_var) / ncol(df_norm)) * 100
+```
+
+Les variables exports, life_expec, imports, child_mort et total_fer,gdpp sont biens projetées. Et selon notre seuil choisi(0.6) 77.77778 % des variables sont bien projetées
+
+```{r}
+### Les deux observations qui contribuent respectivement le plus à laxe 1 et à l'axe 2 sont:
+## Suggestion: On peut les enlever pour voir.
+rownames(acp$ind$contrib)[apply(acp$ind$contrib[, 1:2], 2, which.max)]
+```
+
+Donc Luxembourg est l'observation qui contribut le plus à l'axe 1 et Singapore à l'axe 2.
+
+```{r}
+### Les variables qui contribuent respectivement le plus à laxe 1 et à l'axe 2 sont:
+rownames(acp$var$contrib)[apply(acp$var$contrib[, 1:2], 2, which.max)] ## axe 1 // axe 2
+fviz_contrib(acp, "var", axes = 1)
+fviz_contrib(acp, "var", axes = 2)
+
+```
+
+Donc life_expec est la variable qui contribut le plus à l'axe 1 et imports à l'axe 2.
+
+```{r}
+#Les deux observations qui contribuent le plus au plan formé par les axes 1 et 2 (plan principal)
+pourcentage_variance <-
+  as.data.frame(acp$eig)["percentage of variance"]
+
+contrib_ind_ax1_ax2 <-
+  apply(acp$ind$contrib[, 1:2], 1, function(x)
+    (1 / 100) * (pourcentage_variance[1, ] * x[1] + pourcentage_variance[2, ] * x[2]))
+rownames(acp$ind$contrib)[order(contrib_ind_ax1_ax2, decreasing = TRUE)[1:2]] ## axes 1 et 2
+
+```
+
+Les deux observations qui contribuent le plus au plan formé par les axes 1 et 2 (plan principal) sont Singapore et Luxembourg.
+
+```{r}
+#Les deux variables qui contribuent le plus au plan formé par les axes 1 et 2 (plan principal)
+pourcentage_variance <-
+  as.data.frame(acp$eig)["percentage of variance"]
+
+contrib_var_ax1_ax2 <-
+  apply(acp$var$contrib[, 1:2], 1, function(x)
+    (1 / 100) * (pourcentage_variance[1, ] * x[1] + pourcentage_variance[2, ] * x[2]))
+rownames(acp$var$contrib)[order(contrib_var_ax1_ax2, decreasing = TRUE)[1:2]] ## axes 1 et 2
+fviz_contrib(acp, "var", axes = c(1, 2))
+
+```
+
+Les deux variables qui contribuent le plus au plan formé par les axes 1 et 2 (plan principal) sont exports et life_expec.
+
+```{r}
+fviz_pca_biplot(acp, pointsize = "cos2", col.var = "cos2")
+```
+
+Luxembourg (observation bien projetée) a la plus grande valeur sur l'axe 1 donc on peut dire que Luxembourg est le pays qui a le plus grand niveau socio-économique.
+
+On ne peut rien dire du Nigeria parce qu'elle est mal projeté même si apparemment il est l'observation avec la plus faible valeur sur l'axe 1.
+
 #### K-means Clustering:
+
+Faisons un K-means Clustering avec 2 partition
 
 ```{r}
 ### K-means Clustering:
@@ -484,7 +603,25 @@ df_acp["groupe"]<- factor(kmeans_res[["cluster"]])
 ggplot(df_acp, aes(x = Dim.1, y = Dim.2, col = groupe, label=rownames(df_acp) )) +
   geom_text()
 
+
 ```
+
+```{r}
+df0 <- df_num
+df0["groupe"] <- df_acp["groupe"]
+df0 %>% group_by(groupe) %>% summarise(
+  Moyenne_gdpp = mean(gdpp),
+  Moyenne_income = mean(income),
+  Moyenne_total_fer = mean(total_fer),
+  Moyenne_child_mort = mean(child_mort)
+)
+```
+
+Ce tableau confirme clairement notre hypothèse de répartition des pays en 2 groupes:
+
+-Groupe 1 (pays pauvres) : Groupe avec des pays ayant des gdpp faibles, des revenus(income) faibles, nombre d'enfants par femmes (total_fer) élevés, nombre de mortalité infantile(child_mort) élevé.
+
+-   Groupe 2 (pays riches) : Groupe avec des pays ayant des gdpp élevés, des revenus(income) élevés, nombre d'enfants par femmes (total_fer) faible, nombre de mortalité infantile(child_mort) faible.
 
 #### Hierarchical clustering:
 
@@ -493,39 +630,52 @@ ggplot(df_acp, aes(x = Dim.1, y = Dim.2, col = groupe, label=rownames(df_acp) ))
 
 hc <- HCPC(df_norm, nb.clust = 2,graph = FALSE)
 
-```
-```{r}
 fviz_dend(hc)
 fviz_cluster(hc, ggtheme = theme_bw())
 ```
 
+```{r}
+df1 <- df_num
+df1$groupe <- hc$data.clust$clust
+df1 %>% group_by(groupe) %>% summarise(
+  Moyenne_gdpp = mean(gdpp),
+  Moyenne_income = mean(income),
+  Moyenne_total_fer = mean(total_fer),
+  Moyenne_child_mort = mean(child_mort)
+)
+```
+
+Avec Hierarchical clustering, on retrouve les mêmes clusters qu'avec K-means. Ainsi, on peut donc à partir de cela confirmer l'hypothèse de répartition des pays en deux groupes, un groupe de pays avec un niveau socio-économique élevé et un autre groupe avec un niveau socio-économique faible et en difficulté.
+
 ##### Visualisation GeoMap avec nos cluster (Hierarchical clustering) trouvés:
 
 ```{r}
-df$groupe<-hc$data.clust$clust
-plotdata <- df %>%
+df3 <- df
+df3$groupe <- ifelse(hc$data.clust$clust == 1, "Pays pauvres", "Pays riches")
+plotdata <- df3 %>%
   rename(region = country,
          value = groupe) %>%
-  mutate(region = tolower(region)) %>% mutate(region = recode(region,
-                          "united states"    = "united states of america",
-                          "congo, dem. rep." = "democratic republic of the congo",
-                          "congo, rep."      = "republic of congo",
-                          "korea, dem. rep." = "south korea",
-                          "korea. rep."      = "north korea",
-                          "tanzania"         = "united republic of tanzania",
-                          "serbia"           = "republic of serbia",
-                          "slovak republic"  = "slovakia",
-                          "yemen, rep."      = "yemen",
-                          "cote d'ivoire"    = "ivory coast",
-                          "guinea-bissau"    = "guinea bissau"
-                          ))
-country_choropleth(plotdata,num_colors=9)+
-   scale_fill_brewer(palette="YlOrRd") +
+  mutate(region = tolower(region)) %>% mutate(
+    region = recode(
+      region,
+      "united states"    = "united states of america",
+      "congo, dem. rep." = "democratic republic of the congo",
+      "congo, rep."      = "republic of congo",
+      "korea, dem. rep." = "south korea",
+      "korea. rep."      = "north korea",
+      "tanzania"         = "united republic of tanzania",
+      "serbia"           = "republic of serbia",
+      "slovak republic"  = "slovakia",
+      "yemen, rep."      = "yemen",
+      "cote d'ivoire"    = "ivory coast",
+      "guinea-bissau"    = "guinea bissau"
+    )
+  )
+country_choropleth(plotdata, num_colors = 9) +
+  scale_fill_brewer(palette = "YlOrRd") +
   labs(title = "groupe par country",
        fill = "groupe")
 
 # Source: https://rkabacoff.github.io/datavis/GeoMaps.html#dot-density-maps
 #Inspiré de ce site
 ```
-
-
